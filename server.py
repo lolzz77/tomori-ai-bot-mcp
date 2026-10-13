@@ -16,8 +16,6 @@ async def post_to_discord(message: str = "Hello World!") -> str:
     Sends a text message directly into a specific Discord server channel.
     Use this whenever the user explicitly requests to send alerts, greetings, or text updates to Discord.
     """
-    if not WEBHOOK_URL or "YOUR_DISCORD_WEBHOOK" in WEBHOOK_URL:
-        return "❌ Error: The Discord Webhook URL has not been configured yet."
 
     payload = {
         "content": message,
