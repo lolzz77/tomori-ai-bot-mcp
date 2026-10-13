@@ -39,6 +39,11 @@ async def post_to_discord(message: str = "Hello World!") -> str:
             return f"❌ An error occurred connecting to Discord: {str(e)}"
 
 if __name__ == "__main__":
-    # Dynamic routing to match Render's environment profile
+    import uvicorn
+    import os
+    
     port = int(os.environ.get("PORT", 8000))
-    mcp.run(transport="http", host="0.0.0.0", port=port)
+    
+    # We use fastmcp's built-in ASGI app to guarantee it maps perfectly to /sse
+    app = mcp.get_asgi_app()
+    uvicorn.run(app, host="0.0.0.0", port=port)
