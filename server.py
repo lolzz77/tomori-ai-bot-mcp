@@ -6,8 +6,6 @@ from fastmcp import FastMCP
 # Initialize the FastMCP app
 mcp = FastMCP("Discord Poster Tools")
 
-# Paste your Discord Channel Webhook URL here 
-# (Or set it as an Environment Variable named DISCORD_WEBHOOK_URL on Render)
 WEBHOOK_URL = os.environ.get(
     "DISCORD_WEBHOOK_URL", 
 )
@@ -24,10 +22,9 @@ async def post_to_discord(message: str = "Hello World!") -> str:
     payload = {
         "content": message,
         "username": "Tomori's Drone",
-        "avatar_url": "https://imgur.com" # Optional avatar overlay
+        "avatar_url": "https://imgur.com"
     }
 
-    # Send an asynchronous post payload directly to Discord's API
     async with httpx.AsyncClient() as client:
         try:
             response = await client.post(WEBHOOK_URL, json=payload)
@@ -38,12 +35,12 @@ async def post_to_discord(message: str = "Hello World!") -> str:
         except Exception as e:
             return f"❌ An error occurred connecting to Discord: {str(e)}"
 
+# --- THIS IS THE CORRECT PORTION FOR UVICORN + FASTMCP ---
 if __name__ == "__main__":
     import uvicorn
-    import os
     
     port = int(os.environ.get("PORT", 8000))
     
-    # We use fastmcp's built-in ASGI app to guarantee it maps perfectly to /sse
-    app = mcp.get_asgi_app()
+    # FastMCP uses .http_app() to expose the underlying ASGI framework wrapper
+    app = mcp.http_app() 
     uvicorn.run(app, host="0.0.0.0", port=port)
