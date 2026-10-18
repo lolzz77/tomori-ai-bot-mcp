@@ -88,8 +88,8 @@ async def react_emoji(emoji_to_react_message) -> str:
         json_data = utils.read_file(file_path)
 
         # Get IDs saved by send_template_message()
-        sent_template_message_id = json_data["schedule"]["message_id"]
-        sent_template_channel_id = json_data["schedule"]["channel_id"]
+        sent_template_message_id = json_data["sent_template_message_id"]
+        sent_template_channel_id = json_data["sent_template_channel_id"]
 
         headers = {
             "Authorization": f"Bot {BOT_TOKEN}"
