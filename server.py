@@ -11,8 +11,6 @@ mcp = FastMCP("Discord Poster Tools")
 
 load_dotenv()
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-
 
 @mcp.tool()
 async def send_template_message(template_message: str) -> str:
