@@ -1,37 +1,113 @@
 # server.py
 import os
 import httpx
+from urllib.parse import quote
 from fastmcp import FastMCP
+from module import utils
 
 # Initialize the FastMCP app
 mcp = FastMCP("Discord Poster Tools")
 
-WEBHOOK_URL = os.environ.get(
-    "DISCORD_WEBHOOK_URL", 
-)
+load_dotenv()
+WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
+BOT_TOKEN = os.getenv('BOT_TOKEN')
 
 @mcp.tool()
-async def post_to_discord(message: str = "Hello World!") -> str:
+async def send_template_message(template_message) -> str:
     """
-    Sends a text message directly into a specific Discord server channel.
-    Use this whenever the user explicitly requests to send alerts, greetings, or text updates to Discord.
+    Sends a template message to Discord.
+    Saves the sent message ID and channel ID to a local JSON file.
     """
 
     payload = {
-        "content": message,
+        "content": template_message,
         "username": "Tomori's Drone",
         "avatar_url": "https://imgur.com"
     }
 
     async with httpx.AsyncClient() as client:
         try:
-            response = await client.post(WEBHOOK_URL, json=payload)
-            if response.status_code in [200, 204]:
-                return f"✅ Successfully posted message to Discord channel: '{message}'"
+            response = await client.post(
+                WEBHOOK_URL,
+                params={"wait": "true"},
+                json=payload
+            )
+
+            if response.status_code == 200:
+                data = response.json()
+                message_id = data["id"]
+                channel_id = data["channel_id"]
+                file_path = utils.check_json_exists()
+                json_data = utils.read_file(file_path)
+                json_data["sent_template_message_id"] = message_id
+                json_data["sent_template_channel_id"] = channel_id
+
+                utils.write_file(json_data, file_path)
+                return (
+                    f"✅ Message sent successfully!\n"
+                    f"Message ID: {message_id}\n"
+                    f"Channel ID: {channel_id}"
+                )
             else:
-                return f"❌ Failed to post. Discord API returned status: {response.status_code}"
+                return (
+                    f"❌ Discord error: "
+                    f"{response.status_code} - {response.text}"
+                )
+
         except Exception as e:
-            return f"❌ An error occurred connecting to Discord: {str(e)}"
+            return f"❌ Error: {str(e)}"
+
+
+async def react_emoji(emoji_to_react_message) -> str:
+    """
+    Gets the sent template message IDs from the JSON file,
+    then adds a list of emojis defined by the user.
+
+    Example input:
+        ["👍", "❤️", "🎉"]
+    """
+    try:
+        file_path = utils.check_json_exists()
+        json_data = utils.read_file(file_path)
+
+        # Get IDs saved by send_template_message()
+        sent_template_message_id = json_data["schedule"]["message_id"]
+        sent_template_channel_id = json_data["schedule"]["channel_id"]
+
+        headers = {
+            "Authorization": f"Bot {BOT_TOKEN}"
+        }
+
+        results = []
+
+        async with httpx.AsyncClient() as client:
+            for emoji in emoji_to_react_message:
+                encoded_emoji = quote(emoji, safe="")
+
+                url = (
+                    f"https://discord.com/api/v10/channels/"
+                    f"{sent_template_channel_id}/messages/"
+                    f"{sent_template_message_id}/reactions/"
+                    f"{encoded_emoji}/@me"
+                )
+
+                response = await client.put(url, headers=headers)
+
+                if response.status_code == 204:
+                    results.append(f"✅ Added {emoji}")
+                else:
+                    results.append(
+                        f"❌ Failed {emoji}: "
+                        f"{response.status_code} - {response.text}"
+                    )
+
+        return "\n".join(results)
+
+    except KeyError as e:
+        return f"❌ Missing message ID or channel ID in JSON file: {e}"
+    except Exception as e:
+        return f"❌ Error adding reactions: {str(e)}"
+
 
 # --- THIS IS THE CORRECT PORTION FOR UVICORN + FASTMCP ---
 if __name__ == "__main__":
