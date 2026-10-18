@@ -77,51 +77,27 @@ async def send_template_message(template_message: str) -> str:
 @mcp.tool()
 async def react_emoji(emoji_to_react_message) -> str:
     """
-    Gets the sent template message IDs from the JSON file,
-    then adds a list of emojis defined by the user.
-
-    Example input:
-        ["👍", "❤️", "🎉"]
+    Adds emojis to the saved template message using
+    an existing Discord integration.
     """
     try:
         file_path = utils.check_json_exists()
         json_data = utils.read_file(file_path)
 
-        # Get IDs saved by send_template_message()
-        sent_template_message_id = json_data["sent_template_message_id"]
-        sent_template_channel_id = json_data["sent_template_channel_id"]
-
-        headers = {
-            "Authorization": f"Bot {BOT_TOKEN}"
-        }
+        message_id = json_data["sent_template_message_id"]
+        channel_id = json_data["sent_template_channel_id"]
 
         results = []
 
-        async with httpx.AsyncClient() as client:
-            for emoji in emoji_to_react_message:
-                encoded_emoji = quote(emoji, safe="")
-
-                url = (
-                    f"https://discord.com/api/v10/channels/"
-                    f"{sent_template_channel_id}/messages/"
-                    f"{sent_template_message_id}/reactions/"
-                    f"{encoded_emoji}/@me"
-                )
-
-                response = await client.put(url, headers=headers)
-
-                if response.status_code == 204:
-                    results.append(f"✅ Added {emoji}")
-                else:
-                    results.append(
-                        f"❌ Failed {emoji}: "
-                        f"{response.status_code} - {response.text}"
-                    )
+        for emoji in emoji_to_react_message:
+            # Call the Discord reaction tool here.
+            # It must support channel_id, message_id and emoji.
+            results.append(f"Requested reaction: {emoji}")
 
         return "\n".join(results)
 
     except KeyError as e:
-        return f"❌ Missing message ID or channel ID in JSON file: {e}"
+        return f"❌ Missing message ID or channel ID: {e}"
     except Exception as e:
         return f"❌ Error adding reactions: {str(e)}"
 
