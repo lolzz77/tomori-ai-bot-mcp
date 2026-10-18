@@ -1,6 +1,7 @@
 # server.py
 import os
 import httpx
+from dotenv import load_dotenv
 from urllib.parse import quote
 from fastmcp import FastMCP
 from module import utils
