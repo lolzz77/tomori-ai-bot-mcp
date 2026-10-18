@@ -13,50 +13,66 @@ load_dotenv()
 WEBHOOK_URL = os.environ.get("DISCORD_WEBHOOK_URL")
 BOT_TOKEN = os.getenv('BOT_TOKEN')
 
+
 @mcp.tool()
-async def send_template_message(template_message) -> str:
+async def send_template_message(template_message: str) -> str:
     """
-    Sends a template message to Discord.
+    Sends a text template to Discord through a webhook.
     Saves the sent message ID and channel ID to a local JSON file.
+
+    Args:
+        template_message: The complete Discord message content as a string.
     """
+    import httpx
+
+    if not isinstance(template_message, str):
+        return (
+            "Error: template_message must be a string. "
+            f"Received type: {type(template_message).__name__}"
+        )
 
     payload = {
         "content": template_message,
         "username": "Tomori's Drone",
-        "avatar_url": "https://imgur.com"
+        "avatar_url": "https://imgur.com",
     }
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.0) as client:
         try:
             response = await client.post(
                 WEBHOOK_URL,
                 params={"wait": "true"},
-                json=payload
+                json=payload,
             )
 
-            if response.status_code == 200:
+            if response.status_code in (200, 201):
                 data = response.json()
+
                 message_id = data["id"]
                 channel_id = data["channel_id"]
+
                 file_path = utils.check_json_exists()
                 json_data = utils.read_file(file_path)
+
                 json_data["sent_template_message_id"] = message_id
                 json_data["sent_template_channel_id"] = channel_id
 
                 utils.write_file(json_data, file_path)
+
                 return (
-                    f"✅ Message sent successfully!\n"
+                    "Message sent successfully!\n"
                     f"Message ID: {message_id}\n"
                     f"Channel ID: {channel_id}"
                 )
-            else:
-                return (
-                    f"❌ Discord error: "
-                    f"{response.status_code} - {response.text}"
-                )
+
+            return (
+                f"Discord HTTP {response.status_code}: "
+                f"{response.text}"
+            )
 
         except Exception as e:
-            return f"❌ Error: {str(e)}"
+            return f"Error ({type(e).__name__}): {e}"
+
 
 @mcp.tool()
 async def react_emoji(emoji_to_react_message) -> str:
