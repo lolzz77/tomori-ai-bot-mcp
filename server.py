@@ -58,7 +58,7 @@ async def send_template_message(template_message) -> str:
         except Exception as e:
             return f"❌ Error: {str(e)}"
 
-
+@mcp.tool()
 async def react_emoji(emoji_to_react_message) -> str:
     """
     Gets the sent template message IDs from the JSON file,
