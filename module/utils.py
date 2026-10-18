@@ -2,6 +2,10 @@ import os
 import json
 from module import globalpy
 
+def write_file(json_data, file_path):
+    with open(file_path, "w") as f:
+        json.dump(json_data, f, indent=4)
+
 def read_file(file_path):
     with open(file_path, "r") as f:
         json_data = json.load(f)
